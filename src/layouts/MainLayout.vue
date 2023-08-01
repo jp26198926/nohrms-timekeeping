@@ -1,6 +1,6 @@
 <template>
   <q-layout view="lHh Lpr lFf">
-    <q-header elevated>
+    <q-header>
       <q-toolbar>
         <q-btn
           flat
@@ -12,22 +12,19 @@
         />
 
         <q-toolbar-title>
-          Timekeeping Terminal
+          Barcode Terminal v2
         </q-toolbar-title>
 
-        <div>Version {{ $q.version }}</div>
+        <div>{{ location.label }}</div>
       </q-toolbar>
     </q-header>
 
     <q-drawer
       v-model="leftDrawerOpen"
-      show-if-above
       bordered
     >
       <q-list>
-        <q-item-label
-          header
-        >
+        <q-item-label header>
           Essential Links
         </q-item-label>
 
@@ -49,36 +46,32 @@
 import { defineComponent, ref } from 'vue'
 import EssentialLink from 'components/EssentialLink.vue'
 
+const location = ref(JSON.parse(localStorage.getItem('timekeeper_location')) || {});
+
 const linksList = [
   {
     title: 'Home',
     caption: 'Show Main Page',
     icon: 'home',
-    link: 'https://quasar.dev'
+    link: '/'
   },
   {
     title: 'Server',
     caption: 'Select a Server',
     icon: 'public',
-    link: 'https://github.com/quasarframework'
+    link: '/server'
   },
   {
     title: 'Location',
     caption: 'Set Location',
     icon: 'directions',
-    link: 'https://chat.quasar.dev'
+    link: '/location'
   },
   {
-    title: 'Clock-In',
-    caption: 'Use as Clock In',
+    title: 'Type',
+    caption: 'For In or Out',
     icon: 'login',
-    link: 'https://forum.quasar.dev'
-  },
-  {
-    title: 'Clock-Out',
-    caption: 'Use as Clock Out',
-    icon: 'logout',
-    link: 'https://twitter.quasar.dev'
+    link: '/type'
   }
 ]
 
@@ -93,6 +86,7 @@ export default defineComponent({
     const leftDrawerOpen = ref(false)
 
     return {
+      location,
       essentialLinks: linksList,
       leftDrawerOpen,
       toggleLeftDrawer () {
