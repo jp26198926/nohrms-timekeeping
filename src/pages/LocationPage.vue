@@ -25,6 +25,7 @@ import { ref, onMounted } from 'vue';
 import axios from 'axios';
 
 export default {
+
   setup() {
     const $q  = useQuasar();
     const api = ref(localStorage.getItem('timekeeper_server_api') || '');

@@ -45,8 +45,7 @@
 <script>
 import { defineComponent, ref } from 'vue'
 import EssentialLink from 'components/EssentialLink.vue'
-
-const location = ref(JSON.parse(localStorage.getItem('timekeeper_location')) || {});
+import { useQuasar } from 'quasar'
 
 const linksList = [
   {
@@ -83,7 +82,12 @@ export default defineComponent({
   },
 
   setup () {
+    //const location = ref(JSON.parse(localStorage.getItem('timekeeper_location')) || {});
     const leftDrawerOpen = ref(false)
+    const $q = useQuasar()
+
+
+    const location = ref(JSON.parse($q.localStorage.getItem('timekeeper_location')) || {});
 
     return {
       location,

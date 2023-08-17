@@ -1,4 +1,4 @@
-import { app, BrowserWindow, nativeTheme } from 'electron'
+import { app, BrowserWindow, nativeTheme, dialog } from 'electron'
 import path from 'path'
 import os from 'os'
 
@@ -22,7 +22,9 @@ function createWindow () {
     width: 1000,
     height: 600,
     useContentSize: true,
+    fullscreen: true, // This makes the window open in full-screen mode
     webPreferences: {
+      webSecurity: false,
       contextIsolation: true,
       // More info: https://v2.quasar.dev/quasar-cli-webpack/developing-electron-apps/electron-preload-script
       preload: path.resolve(__dirname, process.env.QUASAR_ELECTRON_PRELOAD)
@@ -59,3 +61,4 @@ app.on('activate', () => {
     createWindow()
   }
 })
+

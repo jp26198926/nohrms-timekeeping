@@ -20,6 +20,8 @@
                       label="Barcode"
                       @keydown="handleKeyPress"
                       class="q-pa-md"
+                      autofocus
+                      ref="myBarcode"
                     />
                   </div>
 
@@ -36,6 +38,14 @@
 
               <div class="col-12 col-md-8 flex items-center justify-center">
                 <div class="column">
+                  <q-btn
+                    align="center"
+                    class="btn-fixed-width"
+                    color="warning"
+                    label="Switch"
+                    icon="format_size"
+                    @click="switching()"
+                  />
                   <div class="col text-h2 text-center q-pa-md text-weight-bolder text-uppercase text-primary "   >
                     {{ type.label }}
                   </div>
@@ -88,7 +98,7 @@ export default defineComponent({
       hour12: false,
       hour: '2-digit',
       minute: '2-digit',
-      second: '2-digit',
+      second: '2-digit'
     }));
 
     const employee = ref({});
@@ -105,6 +115,12 @@ export default defineComponent({
     const formattedDate = ref(new Intl.DateTimeFormat('en-US', formatOptions).format(new Date()));
     const formattedTime = ref(getFormattedTime());
 
+    const setFocusOnInput = () => {
+      myBarcode.value?.focus(); // Focus on the input field
+    };
+
+    const myBarcode = ref(null);
+
     function getFormattedTime() {
       const currentTime = new Date();
       const hour = currentTime.getHours().toString().padStart(2, '0');
@@ -119,6 +135,18 @@ export default defineComponent({
       if (event.keyCode == 13) {
         saveTime();
       }
+    }
+
+    // Handle Switching Time Type (In or Out)
+    function switching(){
+      if (type.value.value==1){
+        type.value = {label: 'Clock Out', value: 0};
+      }else{
+        type.value = {label: 'Clock In', value: 1};
+      }
+
+      localStorage.setItem('timekeeper_type', JSON.stringify(type.value));
+
     }
 
     function showAlert (msg) {
@@ -140,7 +168,7 @@ export default defineComponent({
           emp_no: emp_no.value,
           location_id: location.value.value,
           dt: currentDate.value,
-          emp_time: currentDateTime.value,
+          emp_time: currentDateTime.value.replace(',', ''),
           stat: type.value.value
         }
 
@@ -176,8 +204,10 @@ export default defineComponent({
 
     onMounted(() => {
       // Update the time every second
+
       setInterval(() => {
         formattedTime.value = getFormattedTime();
+        setFocusOnInput();
       }, 1000);
     });
 
@@ -193,7 +223,9 @@ export default defineComponent({
       handleKeyPress,
       location,
       imageSrc,
-      showAlert
+      showAlert,
+      myBarcode,
+      switching
     }
   }
 })
