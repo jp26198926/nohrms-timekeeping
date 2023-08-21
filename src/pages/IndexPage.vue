@@ -78,14 +78,17 @@
 </template>
 
 <script>
+import { useQuasar, QSpinnerGears } from 'quasar';
 import { defineComponent, ref, onMounted, computed} from 'vue'
 import axios from 'axios';
 import defaultPhoto from 'src/assets/user.png'
+import { openDB } from 'idb'
 
 export default defineComponent({
   name: 'IndexPage',
 
   setup () {
+    const $q = useQuasar();
     const message = ref('ID Not Found');
     const api = ref(localStorage.getItem('timekeeper_server_api') || '');
     const location = ref(JSON.parse(localStorage.getItem('timekeeper_location')) || {});
@@ -163,14 +166,23 @@ export default defineComponent({
     }
 
     async function saveTime() {
+      const dataToSend = {
+        emp_no: emp_no.value,
+        location_id: location.value.value,
+        dt: currentDate.value,
+        emp_time: currentDateTime.value.replace(',', ''),
+        stat: type.value.value
+      }
+
+      $q.loading.show({
+        spinner: QSpinnerGears,
+        spinnerColor: 'white',
+        messageColor: 'white                           ',
+        backgroundColor: 'black',
+        message: 'Please wait...'
+      });
+
       try {
-        const dataToSend = {
-          emp_no: emp_no.value,
-          location_id: location.value.value,
-          dt: currentDate.value,
-          emp_time: currentDateTime.value.replace(',', ''),
-          stat: type.value.value
-        }
 
         const response = await axios.post(api.value + '/api/timelog', JSON.stringify(dataToSend));
         //const response = await axios.post('/api/timelog', JSON.stringify(dataToSend));
@@ -178,6 +190,9 @@ export default defineComponent({
         if (response.data.status === "success"){
           employee.value = response.data.data;
           message.value = response.data.data.emp_no;
+
+          await saveToFileSuccess(dataToSend);
+
         }else{
           employee.value = {
             fullname:"",
@@ -185,6 +200,8 @@ export default defineComponent({
             division:""
           }
           message.value = response.data.message;
+
+          await saveToFileRejected(dataToSend);
         }
 
         emp_no.value = "";
@@ -196,16 +213,82 @@ export default defineComponent({
         }
 
       } catch (error) {
-        message.value = 'Error fetching data';
+        message.value = emp_no.value + ' Accepted';
         emp_no.value = "";
+        employee.value = {
+          fullname:"",
+          department:"",
+          division:""
+        };
         imageSrc.value = defaultPhoto;
+
+        await saveToIndexedDB(dataToSend);
+        await saveToFileFailed(dataToSend);
+        await getFromIndexedDB();
       }
+
+      $q.loading.hide();
     }
+
+    const saveToIndexedDB = async (data) => {
+      const db = await openDB('TimekeeperDB', 1, {
+        upgrade(db) {
+          if (!db.objectStoreNames.contains('failed-data')) {
+            db.createObjectStore('failed-data', { keyPath: 'id', autoIncrement: true });
+          }
+        }
+      });
+
+      const transaction = db.transaction(['failed-data'], 'readwrite');
+      const dataStore = transaction.objectStore('failed-data');
+
+      await dataStore.add(data);
+    };
+
+    const getFromIndexedDB = async () => {
+      const db = await openDB('TimekeeperDB', 1);
+      const transaction = db.transaction('failed-data', 'readonly');
+      const dataStore = transaction.objectStore('failed-data');
+
+      const allRecords = await dataStore.getAll();
+
+      console.log(allRecords)
+    };
+
+    const saveToFileFailed = async (data) => {
+      const content = `${data.dt};${data.emp_time};${data.location_id};${data.stat};${data.emp_no}`;
+      window.ipcRenderer?.send('saveToFileFailed', content);
+    };
+
+    const saveToFileSuccess = async (data) => {
+      const content = `${data.dt};${data.emp_time};${data.location_id};${data.stat};${data.emp_no}`;
+      window.ipcRenderer.send('saveToFileSuccess', content);
+    };
+
+    const saveToFileNotFound = async (data) => {
+      const content = `${data.dt};${data.emp_time};${data.location_id};${data.stat};${data.emp_no}`;
+      window.ipcRenderer.send('saveToFileNotFound', content);
+    };
+
+    const saveToFileRejected = async (data) => {
+      const content = `${data.dt};${data.emp_time};${data.location_id};${data.stat};${data.emp_no}`;
+      window.ipcRenderer.send('saveToFileRejected', content);
+    };
 
     onMounted(() => {
       // Update the time every second
 
       setInterval(() => {
+        currentDate.value =new Date().toLocaleDateString('en-CA');
+        currentDateTime.value = new Date().toLocaleString('en-CA', {
+          year: 'numeric',
+          month: '2-digit',
+          day: '2-digit',
+          hour12: false,
+          hour: '2-digit',
+          minute: '2-digit',
+          second: '2-digit'
+        });
         formattedTime.value = getFormattedTime();
         setFocusOnInput();
       }, 1000);

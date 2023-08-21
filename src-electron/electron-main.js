@@ -1,6 +1,85 @@
-import { app, BrowserWindow, nativeTheme, dialog } from 'electron'
+import { app, BrowserWindow, nativeTheme, ipcMain } from 'electron'
 import path from 'path'
 import os from 'os'
+
+//jp code
+import fs from 'fs'
+const appDirectory = app.getPath('userData'); // Get the app's directory
+const failedFolderPath = path.join(appDirectory, 'log-failed'); // Create "failed" folder inside the app directory
+const successFolderPath = path.join(appDirectory, 'log-success'); // Create "success" folder inside the app directory
+const notFoundFolderPath = path.join(appDirectory, 'log-not-found'); // Create "not found" folder inside the app directory
+const rejectedFolderPath = path.join(appDirectory, 'log-rejected'); // Create "rejected" folder inside the app directory
+
+if (!fs.existsSync(failedFolderPath)) {
+  fs.mkdirSync(failedFolderPath);
+}
+
+if (!fs.existsSync(successFolderPath)) {
+  fs.mkdirSync(successFolderPath);
+}
+
+if (!fs.existsSync(notFoundFolderPath)) {
+  fs.mkdirSync(notFoundFolderPath);
+}
+
+if (!fs.existsSync(rejectedFolderPath)) {
+  fs.mkdirSync(rejectedFolderPath);
+}
+
+ipcMain.on('saveToFileFailed', (event, content) => {
+  const currentDate = new Date().toISOString().split('T')[0];
+  const filePath = path.join(failedFolderPath, `${currentDate}.txt`);
+
+  if (fs.existsSync(filePath)) {
+    // If the file already exists, append data to it
+    fs.appendFileSync(filePath, `\n${content}`);
+  } else {
+    // If the file doesn't exist, create it with the content
+    fs.writeFileSync(filePath, content);
+  }
+});
+
+ipcMain.on('saveToFileSuccess', (event, content) => {
+  const currentDate = new Date().toISOString().split('T')[0];
+  const filePath = path.join(successFolderPath, `${currentDate}.txt`);
+
+  if (fs.existsSync(filePath)) {
+    // If the file already exists, append data to it
+    fs.appendFileSync(filePath, `\n${content}`);
+  } else {
+    // If the file doesn't exist, create it with the content
+    fs.writeFileSync(filePath, content);
+  }
+});
+
+ipcMain.on('saveToFileNotFound', (event, content) => {
+  const currentDate = new Date().toISOString().split('T')[0];
+  const filePath = path.join(notFoundFolderPath, `${currentDate}.txt`);
+
+  if (fs.existsSync(filePath)) {
+    // If the file already exists, append data to it
+    fs.appendFileSync(filePath, `\n${content}`);
+  } else {
+    // If the file doesn't exist, create it with the content
+    fs.writeFileSync(filePath, content);
+  }
+});
+
+ipcMain.on('saveToFileRejected', (event, content) => {
+  const currentDate = new Date().toISOString().split('T')[0];
+  const filePath = path.join(rejectedFolderPath, `${currentDate}.txt`);
+
+  if (fs.existsSync(filePath)) {
+    // If the file already exists, append data to it
+    fs.appendFileSync(filePath, `\n${content}`);
+  } else {
+    // If the file doesn't exist, create it with the content
+    fs.writeFileSync(filePath, content);
+  }
+});
+
+//end of jp code
+
 
 // needed in case process is undefined under Linux
 const platform = process.platform || os.platform()
