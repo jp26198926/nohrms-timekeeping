@@ -27,8 +27,13 @@ if (!fs.existsSync(rejectedFolderPath)) {
 }
 
 ipcMain.on('saveToFileFailed', (event, content) => {
-  const currentDate = new Date().toISOString().split('T')[0];
-  const filePath = path.join(failedFolderPath, `${currentDate}.txt`);
+  // const currentDate = new Date().toISOString().split('T')[0];
+  const currentDate = new Date();
+  const year = currentDate.getFullYear();
+  const month = String(currentDate.getMonth() + 1).padStart(2, '0');
+  const day = String(currentDate.getDate()).padStart(2, '0');
+
+  const filePath = path.join(failedFolderPath, `${year}-${month}-${day}.txt`);
 
   if (fs.existsSync(filePath)) {
     // If the file already exists, append data to it
@@ -40,8 +45,13 @@ ipcMain.on('saveToFileFailed', (event, content) => {
 });
 
 ipcMain.on('saveToFileSuccess', (event, content) => {
-  const currentDate = new Date().toISOString().split('T')[0];
-  const filePath = path.join(successFolderPath, `${currentDate}.txt`);
+  // const currentDate = new Date().toISOString().split('T')[0];
+  const currentDate = new Date();
+  const year = currentDate.getFullYear();
+  const month = String(currentDate.getMonth() + 1).padStart(2, '0');
+  const day = String(currentDate.getDate()).padStart(2, '0');
+
+  const filePath = path.join(successFolderPath, `${year}-${month}-${day}.txt`);
 
   if (fs.existsSync(filePath)) {
     // If the file already exists, append data to it
@@ -53,8 +63,13 @@ ipcMain.on('saveToFileSuccess', (event, content) => {
 });
 
 ipcMain.on('saveToFileNotFound', (event, content) => {
-  const currentDate = new Date().toISOString().split('T')[0];
-  const filePath = path.join(notFoundFolderPath, `${currentDate}.txt`);
+  // const currentDate = new Date().toISOString().split('T')[0];
+  const currentDate = new Date();
+  const year = currentDate.getFullYear();
+  const month = String(currentDate.getMonth() + 1).padStart(2, '0');
+  const day = String(currentDate.getDate()).padStart(2, '0');
+
+  const filePath = path.join(notFoundFolderPath, `${year}-${month}-${day}.txt`);
 
   if (fs.existsSync(filePath)) {
     // If the file already exists, append data to it
@@ -66,8 +81,13 @@ ipcMain.on('saveToFileNotFound', (event, content) => {
 });
 
 ipcMain.on('saveToFileRejected', (event, content) => {
-  const currentDate = new Date().toISOString().split('T')[0];
-  const filePath = path.join(rejectedFolderPath, `${currentDate}.txt`);
+  // const currentDate = new Date().toISOString().split('T')[0];
+  const currentDate = new Date();
+  const year = currentDate.getFullYear();
+  const month = String(currentDate.getMonth() + 1).padStart(2, '0');
+  const day = String(currentDate.getDate()).padStart(2, '0');
+
+  const filePath = path.join(rejectedFolderPath, `${year}-${month}-${day}.txt`);
 
   if (fs.existsSync(filePath)) {
     // If the file already exists, append data to it

@@ -94,15 +94,7 @@ export default defineComponent({
     const location = ref(JSON.parse(localStorage.getItem('timekeeper_location')) || {});
     const type = ref(JSON.parse(localStorage.getItem('timekeeper_type')) || {});
     const currentDate = ref(new Date().toLocaleDateString('en-CA'));
-    const currentDateTime = ref(new Date().toLocaleString('en-CA', {
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit',
-      hour12: false,
-      hour: '2-digit',
-      minute: '2-digit',
-      second: '2-digit'
-    }));
+    const currentDateTime = ref(getFormattedDateTime());
 
     const employee = ref({});
     const emp_no = ref('');
@@ -131,6 +123,21 @@ export default defineComponent({
       const second = currentTime.getSeconds().toString().padStart(2, '0');
       return `${hour}:${minute}:${second}`;
       //return currentTime.toLocaleTimeString('en-US');
+    }
+
+    // this will be sent to the server
+    function getFormattedDateTime() {
+      const currentTime = new Date();
+
+      const year = currentTime.getFullYear();
+      const month = String(currentTime.getMonth() + 1).padStart(2, '0');
+      const day = String(currentTime.getDate()).padStart(2, '0');
+
+      const hour = currentTime.getHours().toString().padStart(2, '0');
+      const minute = currentTime.getMinutes().toString().padStart(2, '0');
+      const second = currentTime.getSeconds().toString().padStart(2, '0');
+
+      return `${year}-${month}-${day} ${hour}:${minute}:${second}`;
     }
 
     // Handle the keypress event
@@ -279,17 +286,10 @@ export default defineComponent({
       // Update the time every second
 
       setInterval(() => {
-        currentDate.value =new Date().toLocaleDateString('en-CA');
-        currentDateTime.value = new Date().toLocaleString('en-CA', {
-          year: 'numeric',
-          month: '2-digit',
-          day: '2-digit',
-          hour12: false,
-          hour: '2-digit',
-          minute: '2-digit',
-          second: '2-digit'
-        });
+        currentDate.value = new Date().toLocaleDateString('en-CA');
+        currentDateTime.value = getFormattedDateTime();
         formattedTime.value = getFormattedTime();
+        formattedDate.value = new Intl.DateTimeFormat('en-US', formatOptions).format(new Date());
         setFocusOnInput();
       }, 1000);
     });

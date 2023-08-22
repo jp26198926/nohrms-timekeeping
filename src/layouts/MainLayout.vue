@@ -40,9 +40,11 @@
       <router-view />
     </q-page-container>
 
-    <q-footer bordered class="bg-white text-primary">
-      <q-toolbar>
-        <q-toolbar-title>Offline Data: {{ totalOfflineData }} records</q-toolbar-title>
+    <q-footer dense bordered class="bg-white text-primary">
+      <q-toolbar dense>
+        <q-toolbar-title dense>Offline Data: {{ totalOfflineData }} records</q-toolbar-title>
+        <q-toolbar-title dense class="text-center"> {{ currentDate }} </q-toolbar-title>
+        <q-toolbar-title desnse class="text-right"> {{ currentDateTime }} </q-toolbar-title>
       </q-toolbar>
     </q-footer>
 
@@ -98,6 +100,23 @@ export default defineComponent({
     const api = ref(localStorage.getItem('timekeeper_server_api') || '');
     const location = ref(JSON.parse($q.localStorage.getItem('timekeeper_location')) || {});
 
+    const currentDate = ref(new Date().toLocaleDateString('en-CA'));
+    const currentDateTime = ref(getFormattedDateTime());
+
+    function getFormattedDateTime() {
+      const currentTime = new Date();
+
+      const year = currentTime.getFullYear();
+      const month = String(currentTime.getMonth() + 1).padStart(2, '0');
+      const day = String(currentTime.getDate()).padStart(2, '0');
+
+      const hour = currentTime.getHours().toString().padStart(2, '0');
+      const minute = currentTime.getMinutes().toString().padStart(2, '0');
+      const second = currentTime.getSeconds().toString().padStart(2, '0');
+
+      return `${year}-${month}-${day} ${hour}:${minute}:${second}`;
+    }
+
     async function checkOfflineData() {
       const db = await openDB('TimekeeperDB', 1);
       const transaction = db.transaction('failed-data', 'readwrite');
@@ -109,8 +128,12 @@ export default defineComponent({
       if (allRecords.length > 0) {
         for (const record of allRecords) {
           try {
-            await sendDataToAPI(record);
-            await deleteRecordFromIndexedDB(db, 'failed-data', record.id);
+            const response = await sendDataToAPI(record);
+
+            //if (response.data.status === "success"){
+              await deleteRecordFromIndexedDB(db, 'failed-data', record.id);
+            //}
+
           } catch (error) {
             console.error('Error sending data:', error);
           }
@@ -120,7 +143,7 @@ export default defineComponent({
 
     async function sendDataToAPI(record) {
       const apiUrl = api.value + '/api/timelog';
-      await axios.post(apiUrl, JSON.stringify(record));
+      return await axios.post(apiUrl, JSON.stringify(record));
     }
 
     async function deleteRecordFromIndexedDB(db, storeName, recordId) {
@@ -135,12 +158,15 @@ export default defineComponent({
       });
     }
 
-
-
     onMounted(() => {
       setInterval(() => {
         checkOfflineData()
-      }, 2000);
+      }, 5000);
+
+      setInterval(() => {
+        currentDate.value = new Date().toLocaleDateString('en-CA');
+        currentDateTime.value = getFormattedDateTime();
+      }, 1000);
     });
 
     return {
@@ -150,7 +176,9 @@ export default defineComponent({
       toggleLeftDrawer () {
         leftDrawerOpen.value = !leftDrawerOpen.value
       },
-      totalOfflineData
+      totalOfflineData,
+      currentDate,
+      currentDateTime
     }
   }
 })
