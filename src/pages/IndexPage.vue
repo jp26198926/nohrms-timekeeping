@@ -82,7 +82,7 @@ import { useQuasar, QSpinnerGears } from 'quasar';
 import { defineComponent, ref, onMounted, computed} from 'vue'
 import axios from 'axios';
 import defaultPhoto from 'src/assets/user.png'
-import { openDB } from 'idb'
+import { useIndexedDB } from './../IndexedDBService.js'
 
 export default defineComponent({
   name: 'IndexPage',
@@ -95,6 +95,8 @@ export default defineComponent({
     const type = ref(JSON.parse(localStorage.getItem('timekeeper_type')) || {});
     const currentDate = ref(new Date().toLocaleDateString('en-CA'));
     const currentDateTime = ref(getFormattedDateTime());
+
+    const { saveData } = useIndexedDB('TimekeeperDB', 1, 'faileddata');
 
     const employee = ref({});
     const emp_no = ref('');
@@ -191,7 +193,11 @@ export default defineComponent({
 
       try {
 
-        const response = await axios.post(api.value + '/api/timelog', JSON.stringify(dataToSend));
+        const response = await axios.post(
+          api.value + '/api/timelog',
+          JSON.stringify(dataToSend),
+          { timeout: 500 }
+        );
         //const response = await axios.post('/api/timelog', JSON.stringify(dataToSend));
 
         if (response.data.status === "success"){
@@ -229,37 +235,16 @@ export default defineComponent({
         };
         imageSrc.value = defaultPhoto;
 
-        await saveToIndexedDB(dataToSend);
         await saveToFileFailed(dataToSend);
-        await getFromIndexedDB();
+        await saveToIndexedDB(dataToSend);
+
       }
 
       $q.loading.hide();
     }
 
     const saveToIndexedDB = async (data) => {
-      const db = await openDB('TimekeeperDB', 1, {
-        upgrade(db) {
-          if (!db.objectStoreNames.contains('failed-data')) {
-            db.createObjectStore('failed-data', { keyPath: 'id', autoIncrement: true });
-          }
-        }
-      });
-
-      const transaction = db.transaction(['failed-data'], 'readwrite');
-      const dataStore = transaction.objectStore('failed-data');
-
-      await dataStore.add(data);
-    };
-
-    const getFromIndexedDB = async () => {
-      const db = await openDB('TimekeeperDB', 1);
-      const transaction = db.transaction('failed-data', 'readonly');
-      const dataStore = transaction.objectStore('failed-data');
-
-      const allRecords = await dataStore.getAll();
-
-      console.log(allRecords)
+      await saveData(data);
     };
 
     const saveToFileFailed = async (data) => {

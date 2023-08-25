@@ -55,8 +55,8 @@
 import { defineComponent, ref, onMounted} from 'vue'
 import EssentialLink from 'components/EssentialLink.vue'
 import { useQuasar } from 'quasar'
-import { openDB } from 'idb'
 import axios from 'axios';
+import { useIndexedDB } from './../IndexedDBService.js'
 
 const linksList = [
   {
@@ -103,6 +103,8 @@ export default defineComponent({
     const currentDate = ref(new Date().toLocaleDateString('en-CA'));
     const currentDateTime = ref(getFormattedDateTime());
 
+    const { deleteDataById, getAllData } = useIndexedDB('TimekeeperDB', 1, 'faileddata');
+
     function getFormattedDateTime() {
       const currentTime = new Date();
 
@@ -118,44 +120,34 @@ export default defineComponent({
     }
 
     async function checkOfflineData() {
-      const db = await openDB('TimekeeperDB', 1);
-      const transaction = db.transaction('failed-data', 'readwrite');
-      const dataStore = transaction.objectStore('failed-data');
 
-      const allRecords = await dataStore.getAll();
-      totalOfflineData.value = allRecords.length;
+      try{
+        const allRecords = await getAllData();
+        totalOfflineData.value = allRecords.length;
 
-      if (allRecords.length > 0) {
-        for (const record of allRecords) {
-          try {
-            const response = await sendDataToAPI(record);
+        if (allRecords.length > 0) {
+          for (const record of allRecords) {
+            try {
+              const response = await sendDataToAPI(record);
 
-            //if (response.data.status === "success"){
-              await deleteRecordFromIndexedDB(db, 'failed-data', record.id);
-            //}
+              if (response.data.status === "success"){
+                await deleteDataById(record.id);
+              }
 
-          } catch (error) {
-            console.error('Error sending data:', error);
+            } catch (error) {
+              console.error(error.message);
+            }
           }
         }
+      }catch(error){
+        console.error(error.message);
       }
+
     }
 
     async function sendDataToAPI(record) {
       const apiUrl = api.value + '/api/timelog';
       return await axios.post(apiUrl, JSON.stringify(record));
-    }
-
-    async function deleteRecordFromIndexedDB(db, storeName, recordId) {
-      const transaction = db.transaction(storeName, 'readwrite');
-      const dataStore = transaction.objectStore(storeName);
-
-      dataStore.delete(recordId);
-
-      return await new Promise((resolve, reject) => {
-        transaction.oncomplete = () => resolve();
-        transaction.onerror = () => reject(new Error('Error deleting record from IndexedDB'));
-      });
     }
 
     onMounted(() => {
