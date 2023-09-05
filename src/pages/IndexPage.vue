@@ -214,6 +214,8 @@ export default defineComponent({
           }
           message.value = response.data.message;
 
+          //will record the error
+          dataToSend.location_id = response.data.message;
           await saveToFileRejected(dataToSend);
         }
 

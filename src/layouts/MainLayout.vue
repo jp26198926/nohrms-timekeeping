@@ -130,9 +130,13 @@ export default defineComponent({
             try {
               const response = await sendDataToAPI(record);
 
-              if (response.data.status === "success"){
-                await deleteDataById(record.id);
+              if (response.data.status !== "success"){
+                //will record the error
+                record.location_id = response.data.message;
+                await saveToFileRejected(record);
               }
+
+              await deleteDataById(record.id);
 
             } catch (error) {
               console.error(error.message);
@@ -149,6 +153,11 @@ export default defineComponent({
       const apiUrl = api.value + '/api/timelog';
       return await axios.post(apiUrl, JSON.stringify(record));
     }
+
+    const saveToFileRejected = async (data) => {
+      const content = `${data.dt};${data.emp_time};${data.location_id};${data.stat};${data.emp_no}`;
+      window.ipcRenderer.send('saveToFileRejected', content);
+    };
 
     onMounted(() => {
       setInterval(() => {
