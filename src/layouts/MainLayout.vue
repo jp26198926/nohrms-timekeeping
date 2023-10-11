@@ -95,6 +95,7 @@ export default defineComponent({
   setup () {
     const leftDrawerOpen = ref(false)
     const $q = useQuasar()
+    const uploading = ref(false);
 
     const totalOfflineData = ref(0);
     const api = ref(localStorage.getItem('timekeeper_server_api') || '');
@@ -120,13 +121,16 @@ export default defineComponent({
     }
 
     async function checkOfflineData() {
+      uploading.value = true;
 
       try{
         const allRecords = await getAllData();
         totalOfflineData.value = allRecords.length;
 
         if (allRecords.length > 0) {
+
           for (const record of allRecords) {
+
             try {
               const response = await sendDataToAPI(record);
 
@@ -147,6 +151,8 @@ export default defineComponent({
         console.error(error.message);
       }
 
+      uploading.value = false;
+
     }
 
     async function sendDataToAPI(record) {
@@ -161,7 +167,9 @@ export default defineComponent({
 
     onMounted(() => {
       setInterval(() => {
-        checkOfflineData()
+        if (!uploading.value){
+          checkOfflineData()
+        }
       }, 5000);
 
       setInterval(() => {
@@ -179,7 +187,8 @@ export default defineComponent({
       },
       totalOfflineData,
       currentDate,
-      currentDateTime
+      currentDateTime,
+      uploading
     }
   }
 })
