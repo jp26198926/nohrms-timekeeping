@@ -1,6 +1,7 @@
 # Timekeeping App (timekeeping)
 
-Timekeeping Terminal App
+Timekeeping Terminal App is a client app for https://github.com/jp26198926/nohrms
+![image](https://github.com/jp26198926/nohrms-timekeeping/assets/44026745/b214b5e3-5cf5-4e5b-908a-7e803d97b8aa)
 
 ## Install the dependencies
 ```bash
