@@ -11,22 +11,15 @@
           @click="toggleLeftDrawer"
         />
 
-        <q-toolbar-title>
-          Barcode Terminal v2
-        </q-toolbar-title>
+        <q-toolbar-title> Barcode Terminal v{{ $version }} </q-toolbar-title>
 
         <div>{{ location.label }}</div>
       </q-toolbar>
     </q-header>
 
-    <q-drawer
-      v-model="leftDrawerOpen"
-      bordered
-    >
+    <q-drawer v-model="leftDrawerOpen" bordered>
       <q-list>
-        <q-item-label header>
-          Essential Links
-        </q-item-label>
+        <q-item-label header> Essential Links </q-item-label>
 
         <EssentialLink
           v-for="link in essentialLinks"
@@ -42,80 +35,97 @@
 
     <q-footer dense bordered class="bg-white text-primary">
       <q-toolbar dense>
-        <q-toolbar-title dense>Offline Data: {{ totalOfflineData }} records</q-toolbar-title>
-        <q-toolbar-title dense class="text-center"> {{ currentDate }} </q-toolbar-title>
-        <q-toolbar-title desnse class="text-right"> {{ currentDateTime }} </q-toolbar-title>
+        <q-toolbar-title dense
+          >Offline Data: {{ totalOfflineData }} records</q-toolbar-title
+        >
+        <q-toolbar-title dense class="text-center">
+          {{ currentDate }}
+        </q-toolbar-title>
+        <q-toolbar-title desnse class="text-right">
+          {{ currentDateTime }}
+        </q-toolbar-title>
       </q-toolbar>
     </q-footer>
-
   </q-layout>
 </template>
 
 <script>
-import { defineComponent, ref, onMounted} from 'vue'
-import EssentialLink from 'components/EssentialLink.vue'
-import { useQuasar } from 'quasar'
-import axios from 'axios';
-import { useIndexedDB } from './../IndexedDBService.js'
+import { defineComponent, ref, onMounted } from "vue";
+import EssentialLink from "components/EssentialLink.vue";
+import { useQuasar } from "quasar";
+import axios from "axios";
+import { useIndexedDB } from "./../IndexedDBService.js";
 
 const linksList = [
   {
-    title: 'Home',
-    caption: 'Show Main Page',
-    icon: 'home',
-    link: '/'
+    title: "Home",
+    caption: "Show Main Page",
+    icon: "home",
+    link: "/",
   },
   {
-    title: 'Server',
-    caption: 'Select a Server',
-    icon: 'public',
-    link: '/server'
+    title: "Server",
+    caption: "Select a Server",
+    icon: "public",
+    link: "/server",
   },
   {
-    title: 'Location',
-    caption: 'Set Location',
-    icon: 'directions',
-    link: '/location'
+    title: "Location",
+    caption: "Set Location",
+    icon: "directions",
+    link: "/location",
   },
   {
-    title: 'Type',
-    caption: 'For In or Out',
-    icon: 'login',
-    link: '/type'
-  }
-]
+    title: "Type",
+    caption: "For In or Out",
+    icon: "login",
+    link: "/type",
+  },
+  {
+    title: "Sound",
+    caption: "Sound Settings",
+    icon: "audiotrack",
+    link: "/sound",
+  },
+];
 
 export default defineComponent({
-  name: 'MainLayout',
+  name: "MainLayout",
 
   components: {
-    EssentialLink
+    EssentialLink,
   },
 
-  setup () {
-    const leftDrawerOpen = ref(false)
-    const $q = useQuasar()
+  setup() {
+    const leftDrawerOpen = ref(false);
+    const $q = useQuasar();
     const uploading = ref(false);
 
     const totalOfflineData = ref(0);
-    const api = ref(localStorage.getItem('timekeeper_server_api') || '');
-    const location = ref(JSON.parse($q.localStorage.getItem('timekeeper_location')) || {});
+    const api = ref(localStorage.getItem("timekeeper_server_api") || "");
+    const location = ref(
+      JSON.parse($q.localStorage.getItem("timekeeper_location")) || {}
+    );
 
-    const currentDate = ref(new Date().toLocaleDateString('en-CA'));
+    const currentDate = ref(new Date().toLocaleDateString("en-CA"));
     const currentDateTime = ref(getFormattedDateTime());
 
-    const { deleteDataById, getAllData } = useIndexedDB('TimekeeperDB', 1, 'faileddata');
+    const { deleteDataById, getAllData } = useIndexedDB(
+      "TimekeeperDB",
+      1,
+      "faileddata"
+    );
 
     function getFormattedDateTime() {
       const currentTime = new Date();
 
       const year = currentTime.getFullYear();
-      const month = String(currentTime.getMonth() + 1).padStart(2, '0');
-      const day = String(currentTime.getDate()).padStart(2, '0');
+      const month = String(currentTime.getMonth() + 1).padStart(2, "0");
+      const day = String(currentTime.getDate()).padStart(2, "0");
 
-      const hour = currentTime.getHours().toString().padStart(2, '0');
-      const minute = currentTime.getMinutes().toString().padStart(2, '0');
-      const second = currentTime.getSeconds().toString().padStart(2, '0');
+      const hour = currentTime.getHours().toString().padStart(2, "0");
+      const minute = currentTime.getMinutes().toString().padStart(2, "0");
+      const second = currentTime.getSeconds().toString().padStart(2, "0");
 
       return `${year}-${month}-${day} ${hour}:${minute}:${second}`;
     }
@@ -123,57 +133,53 @@ export default defineComponent({
     async function checkOfflineData() {
       uploading.value = true;
 
-      try{
+      try {
         const allRecords = await getAllData();
         totalOfflineData.value = allRecords.length;
 
         if (allRecords.length > 0) {
-
           for (const record of allRecords) {
-
             try {
               const response = await sendDataToAPI(record);
 
-              if (response.data.status !== "success"){
+              if (response.data.status !== "success") {
                 //will record the error
                 record.location_id = response.data.message;
                 await saveToFileRejected(record);
               }
 
               await deleteDataById(record.id);
-
             } catch (error) {
               console.error(error.message);
             }
           }
         }
-      }catch(error){
+      } catch (error) {
         console.error(error.message);
       }
 
       uploading.value = false;
-
     }
 
     async function sendDataToAPI(record) {
-      const apiUrl = api.value + '/api/timelog';
+      const apiUrl = api.value + "/api/timelog";
       return await axios.post(apiUrl, JSON.stringify(record));
     }
 
     const saveToFileRejected = async (data) => {
       const content = `${data.dt};${data.emp_time};${data.location_id};${data.stat};${data.emp_no}`;
-      window.ipcRenderer.send('saveToFileRejected', content);
+      window.ipcRenderer.send("saveToFileRejected", content);
     };
 
     onMounted(() => {
       setInterval(() => {
-        if (!uploading.value){
-          checkOfflineData()
+        if (!uploading.value) {
+          checkOfflineData();
         }
       }, 5000);
 
       setInterval(() => {
-        currentDate.value = new Date().toLocaleDateString('en-CA');
+        currentDate.value = new Date().toLocaleDateString("en-CA");
         currentDateTime.value = getFormattedDateTime();
       }, 1000);
     });
@@ -182,14 +188,14 @@ export default defineComponent({
       location,
       essentialLinks: linksList,
       leftDrawerOpen,
-      toggleLeftDrawer () {
-        leftDrawerOpen.value = !leftDrawerOpen.value
+      toggleLeftDrawer() {
+        leftDrawerOpen.value = !leftDrawerOpen.value;
       },
       totalOfflineData,
       currentDate,
       currentDateTime,
-      uploading
-    }
-  }
-})
+      uploading,
+    };
+  },
+});
 </script>
